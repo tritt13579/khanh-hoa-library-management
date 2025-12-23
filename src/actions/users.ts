@@ -9,7 +9,22 @@ export const loginAction = async (email: string, password: string) => {
     const { auth } = await createClient();
     const { data, error } = await auth.signInWithPassword({ email, password });
 
-    if (error || !data.user) throw error;
+    if (error || !data.user) {
+      // Try to detect whether the account exists but the email is not confirmed yet.
+      try {
+        // Use admin client to list users and find by email.
+        const listRes: any = await supabaseAdmin.auth.admin.listUsers();
+        const users = listRes?.data?.users || listRes?.users || [];
+        const found = users.find((u: any) => u.email === email);
+        if (found && !found.email_confirmed_at) {
+          return { errorMessage: "Chưa xác thực email. Vui lòng kiểm tra hộp thư để xác thực.", role: null };
+        }
+      } catch (e) {
+        // ignore and fall through to throw original error
+      }
+
+      throw error;
+    }
 
     const userId = data.user.id;
 

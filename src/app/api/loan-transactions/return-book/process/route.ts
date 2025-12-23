@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       .from("loantransaction")
       .select("borrow_type")
       .eq("loan_transaction_id", loanId)
-      .single();
+      .maybeSingle();
     if (loanError) throw loanError;
 
     if (loanData?.borrow_type === "Mượn về") {
@@ -159,23 +159,27 @@ export async function POST(request: NextRequest) {
         return sum + (status.book.price || 0);
       }, 0);
 
-      if (readerId && totalBookValue > 0) {
-        const { data: cardData, error: cardError } = await supabase
-          .from("librarycard")
-          .select("current_deposit_balance")
-          .eq("card_id", readerId)
-          .single();
-        if (cardError) throw cardError;
+        if (readerId && totalBookValue > 0) {
+          const { data: cardData, error: cardError } = await supabase
+            .from("librarycard")
+            .select("card_id, current_deposit_balance")
+            .eq("reader_id", readerId)
+            .maybeSingle();
+          if (cardError) throw cardError;
 
-        const updatedBalance =
-          (cardData?.current_deposit_balance || 0) + totalBookValue;
+          if (!cardData) {
+            throw new Error("Library card not found for reader");
+          }
 
-        const { error: updateDepositError } = await supabase
-          .from("librarycard")
-          .update({ current_deposit_balance: updatedBalance })
-          .eq("card_id", readerId);
-        if (updateDepositError) throw updateDepositError;
-      }
+          const updatedBalance =
+            (cardData?.current_deposit_balance || 0) + totalBookValue;
+
+          const { error: updateDepositError } = await supabase
+            .from("librarycard")
+            .update({ current_deposit_balance: updatedBalance })
+            .eq("card_id", cardData.card_id);
+          if (updateDepositError) throw updateDepositError;
+        }
     }
 
     return NextResponse.json({

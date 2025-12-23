@@ -10,18 +10,30 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 1. Lấy thẻ thư viện
+    // 1. Lấy thẻ thư viện và auth_user_id của reader
     const { data: card, error: cardError } = await supabaseAdmin
       .from("librarycard")
       .select("card_id")
       .eq("reader_id", reader_id)
       .single();
 
+    const { data: readerData, error: readerFetchError } = await supabaseAdmin
+      .from("reader")
+      .select("auth_user_id, photo_url")
+      .eq("reader_id", reader_id)
+      .maybeSingle();
+
+    if (readerFetchError) {
+      console.error("Lỗi lấy reader:", readerFetchError);
+      return NextResponse.json({ error: "Không thể lấy thông tin độc giả" }, { status: 500 });
+    }
+
     if (cardError || !card) {
       return NextResponse.json({ error: "Không tìm thấy thẻ thư viện" }, { status: 404 });
     }
 
     const card_id = card.card_id;
+    const authUserId = readerData?.auth_user_id;
 
     // 2. Kiểm tra có reservation hay không
     const { data: reservations, error: resvError } = await supabaseAdmin
@@ -58,9 +70,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Có hàng đợi đang xử lý" }, { status: 400 });
     }
 
-    // 4. Xóa các bản ghi
+    // 4. Xóa avatar trên storage
+    const photoUrl: string | undefined = readerData?.photo_url;
+    if (photoUrl) {
+      try {
+        const cleaned = photoUrl.split("?")[0].split("#")[0];
+
+        const regexes = [
+          /\/storage\/v1\/object\/public\/images\/(.+)$/i,
+          /\/object\/public\/images\/(.+)$/i,
+          /\/images\/(.+)$/i,
+        ];
+
+        let filePath: string | null = null;
+        for (const r of regexes) {
+          const m = cleaned.match(r);
+          if (m && m[1]) {
+            filePath = m[1];
+            break;
+          }
+        }
+
+        if (filePath) {
+          filePath = decodeURIComponent(filePath.split("?")[0]);
+          const { error: removeError } = await supabaseAdmin.storage.from("images").remove([filePath]);
+          if (removeError) {
+            console.error("Lỗi xóa avatar trên storage:", removeError);
+          }
+        } else {
+          console.warn("Không thể trích xuất đường dẫn file từ photo_url, bỏ qua xóa storage:", photoUrl);
+        }
+      } catch (e) {
+        console.error("Exception khi xóa avatar, tiếp tục xóa DB:", e);
+      }
+    }
+
+    // 5. Xóa các bản ghi DB
     await supabaseAdmin.from("librarycard").delete().eq("reader_id", reader_id);
     await supabaseAdmin.from("reader").delete().eq("reader_id", reader_id);
+
+    // 6. Nếu có auth_user_id, xóa user trong Supabase Auth (admin)
+    if (authUserId) {
+      try {
+        const delRes: any = await supabaseAdmin.auth.admin.deleteUser(authUserId);
+        if (delRes?.error) {
+          console.error("Lỗi xóa auth user:", delRes.error);
+          return NextResponse.json({ error: "Xóa user auth thất bại" }, { status: 500 });
+        }
+      } catch (e) {
+        console.error("Exception khi xóa auth user:", e);
+        return NextResponse.json({ error: "Xóa user auth thất bại" }, { status: 500 });
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

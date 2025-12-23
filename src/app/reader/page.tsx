@@ -60,30 +60,12 @@ const ReaderHomePage = () => {
       {/* ===== NAVBAR ===== */}
       <nav className="bg-background shadow-md">
         <div className="flex flex-wrap items-start justify-between px-4 py-2">
-          <div className="flex items-center space-x-2 font-semibold text-gray-900">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-            <span>Browse Categories</span>
-          </div>
-
-          <div className="mt-2 flex flex-wrap justify-center gap-3 text-sm font-medium text-gray-700 md:justify-start">
+          <div className="mt-2 flex flex-wrap justify-center gap-3 text-sm font-medium text-gray-700 dark:text-gray-200 md:justify-start">
             {navItems.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}
-                className={`hover:underline ${label === "Trang chủ" ? "font-semibold text-blue-700" : ""}`}
+                className={`hover:underline ${label === "Trang chủ" ? "font-semibold text-blue-700 dark:text-blue-400" : ""}`}
               >
                 {label}
               </Link>
@@ -112,7 +94,7 @@ const ReaderHomePage = () => {
               </h2>
               <Button
                 variant="outline"
-                className="rounded-full border-white px-6 py-2 text-gray-400 hover:bg-white hover:text-black"
+                className="rounded-full border-white bg-transparent px-6 py-2 text-white hover:bg-white hover:text-black"
               >
                 Đến ngay →
               </Button>

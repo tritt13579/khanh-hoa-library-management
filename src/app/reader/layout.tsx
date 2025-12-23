@@ -12,7 +12,7 @@ export default async function ReaderLayout({
     // <RoleProtectedLayout requiredRole="reader">
     <div className="flex min-h-screen flex-col">
       <ReaderHeader user={user} />
-      <main className="flex flex-1 flex-col px-4 pt-10 xl:px-8">
+      <main className="flex flex-1 flex-col px-4 pt-24 xl:px-8">
         {children}
       </main>
       <FooterReaderPage/>
