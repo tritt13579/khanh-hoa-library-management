@@ -110,3 +110,69 @@ export interface LoanManagementTabProps {
 export interface ReservationsTabProps {
   reservations: FormattedReservation[];
 }
+
+// Reservation Status Types
+export type ReservationStatus =
+  | "Chờ xử lý"
+  | "Sẵn sàng"
+  | "Đã hoàn thành"
+  | "Hết hạn"
+  | "Đã hủy";
+
+// Queue Management
+export interface ReservationQueue {
+  queue_id: number;
+  reservation_id: number;
+  position: number;
+}
+
+// Extended reservation data with queue info and action permissions
+export interface ExtendedFormattedReservation extends FormattedReservation {
+  queuePosition?: number;
+  totalInQueue?: number;
+  canMarkAsReady: boolean;
+  canCancel: boolean;
+  canMarkAsFulfilled: boolean;
+  canMarkAsExpired: boolean;
+}
+
+// Reservation creation payload
+export interface CreateReservationPayload {
+  card_id: number;
+  book_title_id: number;
+}
+
+// Reservation update payload
+export interface UpdateReservationStatusPayload {
+  reservation_id: number;
+  new_status: ReservationStatus;
+  staff_notes?: string;
+}
+
+// Book availability check
+export interface BookAvailability {
+  book_title_id: number;
+  total_copies: number;
+  available_copies: number;
+  checked_out_copies: number;
+  is_reservable: boolean;
+  reason?: string;
+}
+
+// Reader reservation count
+export interface ReaderReservationCount {
+  card_id: number;
+  active_count: number;
+  can_reserve_more: boolean;
+  active_reservations: FormattedReservation[];
+}
+
+// Queue entry for display
+export interface QueueEntry {
+  position: number;
+  reservation_id: number;
+  reader_name: string;
+  card_number: string;
+  reservation_date: string;
+  status: ReservationStatus;
+}

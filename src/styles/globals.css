@@ -85,3 +85,22 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+/* Hide footer when a page requests no-footer layout by toggling body.no-footer */
+.no-footer .footer-reader {
+  display: none !important;
+}

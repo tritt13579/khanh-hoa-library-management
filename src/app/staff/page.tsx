@@ -8,7 +8,7 @@ import ReservationsTab from "@/components/ReservationsTab";
 import { supabaseClient } from "@/lib/client";
 import {
   FormattedLoanTransaction,
-  FormattedReservation,
+  ExtendedFormattedReservation,
   LoanTransactionData,
   ReservationData,
 } from "@/interfaces/library";
@@ -17,7 +17,7 @@ const StaffHomePage = () => {
   const [loanTransactions, setLoanTransactions] = useState<
     FormattedLoanTransaction[]
   >([]);
-  const [reservations, setReservations] = useState<FormattedReservation[]>([]);
+  const [reservations, setReservations] = useState<ExtendedFormattedReservation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,12 +122,32 @@ const StaffHomePage = () => {
                   last_name,
                   email
                 )
+              ),
+              reservationqueue:reservationqueue!reservation_id (
+                queue_id,
+                position
               )
             `,
         )
         .order("reservation_date", { ascending: false });
 
       if (reservationError) throw reservationError;
+
+      // Count total in queue for each book
+      const queueCountMap = new Map<number, number>();
+      reservationData?.forEach((reservation: any) => {
+        const bookId = Array.isArray(reservation.booktitle)
+          ? reservation.booktitle[0]?.book_title_id
+          : reservation.booktitle?.book_title_id;
+
+        if (
+          bookId &&
+          (reservation.reservation_status === "Chờ xử lý" ||
+            reservation.reservation_status === "Sẵn sàng")
+        ) {
+          queueCountMap.set(bookId, (queueCountMap.get(bookId) || 0) + 1);
+        }
+      });
 
       const formattedLoanTransactions =
         loanData?.map((loan: any) => {
@@ -185,6 +205,13 @@ const StaffHomePage = () => {
             : reservation?.booktitle;
 
           const bookTitleId = bookTitle?.book_title_id;
+          const status = reservation.reservation_status;
+
+          const queue = Array.isArray(reservation?.reservationqueue)
+            ? reservation?.reservationqueue[0]
+            : reservation?.reservationqueue;
+
+          const queuePosition = queue?.position ?? undefined;
 
           return {
             id: reservation.reservation_id,
@@ -200,7 +227,17 @@ const StaffHomePage = () => {
             author: bookAuthorsMap.get(bookTitleId!) || "Unknown Author",
             reservationDate: reservation.reservation_date,
             expirationDate: reservation.expiration_date,
-            status: reservation.reservation_status,
+            status: status,
+            queuePosition: queuePosition,
+            totalInQueue: queueCountMap.get(bookTitleId!) || 0,
+            // Determine action permissions
+            canMarkAsReady: status === "Chờ xử lý" && queuePosition === 1,
+            canCancel: status === "Chờ xử lý" || status === "Sẵn sàng",
+            canMarkAsFulfilled: status === "Sẵn sàng",
+            canMarkAsExpired:
+              status === "Sẵn sàng" &&
+              reservation.expiration_date &&
+              new Date(reservation.expiration_date) < new Date(),
           };
         }) || [];
 

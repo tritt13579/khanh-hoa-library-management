@@ -84,6 +84,10 @@ const UserDropdown = () => {
     }
   };
 
+  const handleLoanHistoryRedirect = () => {
+    router.push("/reader/loans");
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -97,6 +101,11 @@ const UserDropdown = () => {
         <DropdownMenuItem onClick={handleProfileRedirect}>
           Trang cá nhân
         </DropdownMenuItem>
+        {user?.role === "reader" && (
+          <DropdownMenuItem onClick={handleLoanHistoryRedirect}>
+            Lịch sử mượn
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem disabled={loading} onClick={handleLogout}>
           {loading ? (
             <span className="flex items-center gap-2">

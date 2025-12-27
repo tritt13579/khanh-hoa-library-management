@@ -46,7 +46,7 @@ const AuthForm = () => {
       } else {
         toast({
           title: "Lỗi",
-          description: "Sai tên đăng nhập hoặc mật khẩu",
+          description: errorMessage || "Sai tên đăng nhập hoặc mật khẩu",
           variant: "destructive",
         });
       }

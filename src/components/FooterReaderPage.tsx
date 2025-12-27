@@ -3,7 +3,7 @@ import React from "react";
 
 const FooterReaderPage = () => {
   return (
-    <footer className="bg-[#1D3A7A] text-white px-6 py-10 text-sm">
+    <footer className="footer-reader bg-[#1D3A7A] text-white px-6 py-10 text-sm">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Thông tin liên hệ */}
         <div>

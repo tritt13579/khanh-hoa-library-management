@@ -29,6 +29,7 @@ interface DatePickerWithRangeProps {
   };
   onChange: (date: DateRange | undefined) => void;
   align?: "start" | "center" | "end";
+  buttonClassName?: string;
 }
 
 const predefinedRanges = [
@@ -77,6 +78,7 @@ export function DatePickerWithRange({
   value,
   onChange,
   align = "start",
+  buttonClassName,
 }: DatePickerWithRangeProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [tempRange, setTempRange] = React.useState<DateRange | undefined>({
@@ -138,6 +140,7 @@ export function DatePickerWithRange({
             className={cn(
               "w-[240px] justify-start text-left font-normal",
               !value && "text-muted-foreground",
+              buttonClassName,
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
