@@ -16,73 +16,23 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("Starting overdue loan status update...");
-
-    // Bước 1: Tìm các loan transaction có sách chưa trả và đã quá hạn
-    const { data: overdueLoans, error: fetchError } = await supabase
-      .from("loantransaction")
-      .select(
-        `
-        loan_transaction_id,
-        due_date,
-        loan_status,
-        loandetail!inner(
-          loan_detail_id,
-          return_date
-        )
-      `,
-      )
-      .lt("due_date", new Date().toISOString().split("T")[0])
-      .in("loan_status", ["Đang mượn"])
-      .is("loandetail.return_date", null);
-
-    if (fetchError) {
-      console.error("Error fetching overdue loans:", fetchError);
-      return NextResponse.json(
-        { error: "Failed to fetch overdue loans", details: fetchError.message },
-        { status: 500 },
-      );
-    }
-
-    if (!overdueLoans || overdueLoans.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: "No overdue loans found",
-        updatedLoans: 0,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Bước 2: Lấy danh sách ID của các loan transaction cần cập nhật
-    const loanTransactionIds = overdueLoans.map(
-      (loan) => loan.loan_transaction_id,
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "process_overdue_loans_and_notify",
+      { p_due_soon_days: 1 },
     );
 
-    // Bước 3: Cập nhật loan_status thành "Quá hạn"
-    const { data: updatedData, error: updateError } = await supabase
-      .from("loantransaction")
-      .update({
-        loan_status: "Quá hạn",
-      })
-      .in("loan_transaction_id", loanTransactionIds)
-      .select();
-
-    if (updateError) {
-      console.error("Error updating overdue loans:", updateError);
+    if (rpcError) {
+      console.error("RPC process_overdue_loans_and_notify error:", rpcError);
       return NextResponse.json(
-        {
-          error: "Failed to update overdue loans",
-          details: updateError.message,
-        },
+        { error: "Failed to process overdue loans", details: rpcError.message },
         { status: 500 },
       );
     }
-
-    console.log(`Updated ${updatedData?.length || 0} overdue loans`);
 
     return NextResponse.json({
       success: true,
-      message: `Successfully updated ${updatedData?.length || 0} overdue loans`,
-      updatedLoans: updatedData?.length || 0,
+      message: "Cron completed",
+      data: rpcData,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

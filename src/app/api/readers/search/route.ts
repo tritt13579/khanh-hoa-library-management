@@ -4,19 +4,12 @@ import { supabaseClient } from "@/lib/client";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-
-    if (!query || query.length < 2) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-      });
-    }
+    const query = searchParams.get("q")?.trim() ?? "";
 
     const supabase = supabaseClient();
 
     // Search readers by name or email, and get their library cards
-    const { data: readers, error: readersError } = await supabase
+    let readersQuery = supabase
       .from("reader")
       .select(
         `
@@ -31,8 +24,17 @@ export async function GET(request: Request) {
         )
       `
       )
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
       .limit(20);
+
+    if (query) {
+      readersQuery = readersQuery.or(
+        `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`
+      );
+    } else {
+      readersQuery = readersQuery.order("last_name", { ascending: true });
+    }
+
+    const { data: readers, error: readersError } = await readersQuery;
 
     if (readersError) throw readersError;
 

@@ -4,19 +4,12 @@ import { supabaseClient } from "@/lib/client";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
-
-    if (!query || query.length < 2) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-      });
-    }
+    const query = searchParams.get("q")?.trim() ?? "";
 
     const supabase = supabaseClient();
 
     // Search books by title
-    const { data: books, error: booksError } = await supabase
+    let booksQuery = supabase
       .from("booktitle")
       .select(
         `
@@ -25,8 +18,15 @@ export async function GET(request: Request) {
         isbn
       `
       )
-      .ilike("title", `%${query}%`)
       .limit(20);
+
+    if (query) {
+      booksQuery = booksQuery.ilike("title", `%${query}%`);
+    } else {
+      booksQuery = booksQuery.order("title", { ascending: true });
+    }
+
+    const { data: books, error: booksError } = await booksQuery;
 
     if (booksError) throw booksError;
 

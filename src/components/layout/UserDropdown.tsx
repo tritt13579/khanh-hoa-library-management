@@ -88,6 +88,14 @@ const UserDropdown = () => {
     router.push("/reader/loans");
   };
 
+  const handleReservationsRedirect = () => {
+    router.push("/reader/reservations");
+  };
+
+  const handleNotificationsRedirect = () => {
+    router.push("/reader/notifications");
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -104,6 +112,16 @@ const UserDropdown = () => {
         {user?.role === "reader" && (
           <DropdownMenuItem onClick={handleLoanHistoryRedirect}>
             Lịch sử mượn
+          </DropdownMenuItem>
+        )}
+        {user?.role === "reader" && (
+          <DropdownMenuItem onClick={handleReservationsRedirect}>
+            Đặt trước
+          </DropdownMenuItem>
+        )}
+        {user?.role === "reader" && (
+          <DropdownMenuItem onClick={handleNotificationsRedirect}>
+            Thông báo
           </DropdownMenuItem>
         )}
         <DropdownMenuItem disabled={loading} onClick={handleLogout}>

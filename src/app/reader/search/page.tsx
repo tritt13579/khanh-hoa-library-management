@@ -22,6 +22,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import dynamic from "next/dynamic";
+
+const ReserveBookButton = dynamic(() => import("@/components/reader/ReserveBookButton"), { ssr: false });
 
 // Định nghĩa types
 type Author = {
@@ -133,23 +136,93 @@ const SearchPage = () => {
       if (error) {
         console.error("Error fetching books:", error);
       } else if (data) {
-        // Chuyển đổi dữ liệu thành danh sách các book title với thống kê
+        // Build maps to account for active holds and active loans so UI reflects reservation logic
+        // Collect all copy ids and book title ids from fetched data
+        const allCopyIds: number[] = [];
+        const allBookTitleIds: number[] = [];
+        data.forEach((bt: any) => {
+          allBookTitleIds.push(bt.book_title_id);
+          (bt.bookcopy || []).forEach((c: any) => {
+            if (c && (c.copy_id || c.book_copy_id)) {
+              allCopyIds.push(c.copy_id || c.book_copy_id);
+            }
+          });
+        });
+
+        // Query active reservation holds (not expired)
+        let heldCopyIds = new Set<number>();
+        if (allCopyIds.length > 0) {
+          const { data: holdData, error: holdError } = await supabase
+            .from("reservation_hold")
+            .select("copy_id, expires_at")
+            .in("copy_id", allCopyIds)
+            .gt("expires_at", new Date().toISOString());
+          if (!holdError && Array.isArray(holdData)) {
+            holdData.forEach((h: any) => {
+              if (h.copy_id) heldCopyIds.add(h.copy_id);
+            });
+          }
+        }
+
+        // Query active loans (return_date is null)
+        let loanedCopyIds = new Set<number>();
+        if (allCopyIds.length > 0) {
+          const { data: loanData, error: loanError } = await supabase
+            .from("loandetail")
+            .select("copy_id")
+            .is("return_date", null)
+            .in("copy_id", allCopyIds);
+          if (!loanError && Array.isArray(loanData)) {
+            loanData.forEach((l: any) => {
+              if (l.copy_id) loanedCopyIds.add(l.copy_id);
+            });
+          }
+        }
+
+        // Query reservations per book_title to compute queued/ready counts
+        const reservationCountsMap = new Map<number, { queued: number; ready: number }>();
+        if (allBookTitleIds.length > 0) {
+          const { data: resData, error: resError } = await supabase
+            .from("reservation")
+            .select("book_title_id, reservation_status")
+            .in("book_title_id", allBookTitleIds);
+          if (!resError && Array.isArray(resData)) {
+            resData.forEach((r: any) => {
+              const id = r.book_title_id;
+              const m = reservationCountsMap.get(id) || { queued: 0, ready: 0 };
+              if (r.reservation_status === "Chờ xử lý") m.queued += 1;
+              if (r.reservation_status === "Sẵn sàng") m.ready += 1;
+              reservationCountsMap.set(id, m);
+            });
+          }
+        }
+
+        // Chuyển đổi dữ liệu thành danh sách các book title với thống kê (consider holds & loans)
         const processedTitles = data.map((booktitle: any) => {
           const copies =
             booktitle.bookcopy?.filter(
               (copy: any) => copy.availability_status !== "Thất lạc",
             ) || [];
 
-          const available_count = copies.filter(
-            (copy: any) => copy.availability_status === "Có sẵn",
-          ).length;
-          const borrowed_count = copies.filter(
-            (copy: any) => copy.availability_status === "Đang mượn",
-          ).length;
-          const reserved_count = copies.filter(
-            (copy: any) => copy.availability_status === "Đặt trước",
-          ).length;
           const total_copies = copies.length;
+
+          // compute available by excluding loaned copies and currently held copies
+          const available_count = copies.filter((copy: any) => {
+            const cid = copy.copy_id || copy.book_copy_id;
+            if (!cid) return false;
+            if (loanedCopyIds.has(cid)) return false;
+            if (heldCopyIds.has(cid)) return false;
+            return true;
+          }).length;
+
+          const borrowed_count = copies.filter((copy: any) => {
+            const cid = copy.copy_id || copy.book_copy_id;
+            return cid && loanedCopyIds.has(cid);
+          }).length;
+
+          // reserved_count based on reservation table (queued + ready)
+          const rc = reservationCountsMap.get(booktitle.book_title_id) || { queued: 0, ready: 0 };
+          const reserved_count = rc.queued + rc.ready;
 
           return {
             book_title_id: booktitle.book_title_id,
@@ -285,7 +358,7 @@ const SearchPage = () => {
   };
 
   return (
-    <div className="w-full space-y-6 px-4 pt-20 sm:px-6 lg:px-12">
+    <div className="w-full space-y-6 px-4 sm:px-6 lg:px-12">
       <h1 className="text-2xl font-bold text-foreground">Tìm kiếm tài liệu</h1>
 
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
@@ -625,90 +698,25 @@ const SearchPage = () => {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
-                      Tổng: {selectedBook.total_copies} bản
-                    </span>
-                    <span className="rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground">
-                      Có sẵn: {selectedBook.available_count}
-                    </span>
-                    <span className="rounded-full bg-destructive/10 px-3 py-1 text-sm text-destructive">
-                      Đang mượn: {selectedBook.borrowed_count}
-                    </span>
-                    <span className="rounded-full bg-chart-1/10 px-3 py-1 text-sm text-chart-1">
-                      Đặt trước: {selectedBook.reserved_count}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="mb-4 text-lg font-semibold text-foreground">
-                  Danh sách các bản sách ({selectedBook.bookcopy?.length || 0}{" "}
-                  bản)
-                </h3>
-
-                <div className="max-h-60 space-y-2 overflow-y-auto">
-                  {selectedBook.bookcopy?.map((copy, index) => (
-                    <div
-                      key={index}
-                      className={`flex items-center justify-between rounded-lg border p-3 ${getStatusColor(copy.availability_status)}`}
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          Mã sách: {copy.book_copy_id || copy.copy_id}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Tình trạng sách:{" "}
-                          {copy.condition?.condition_name || "Không rõ"}
-                        </div>
-                        {copy.acquisition_date && (
-                          <div className="text-sm text-muted-foreground">
-                            Ngày nhập:{" "}
-                            {new Date(copy.acquisition_date).toLocaleDateString(
-                              "vi-VN",
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <div
-                          className={`font-medium ${
-                            copy.availability_status === "Có sẵn"
-                              ? "text-primary"
-                              : copy.availability_status === "Đang mượn"
-                                ? "text-destructive"
-                                : copy.availability_status === "Đặt trước"
-                                  ? "text-chart-1"
-                                  : "text-muted-foreground"
-                          }`}
-                        >
-                          {copy.availability_status}
-                        </div>
-                        {copy.availability_status === "Có sẵn" && (
-                          <Button size="sm" className="mt-1">
-                            Đặt sách
-                          </Button>
-                        )}
-                        {copy.availability_status === "Đang mượn" && (
-                          <Button size="sm" variant="outline" className="mt-1">
-                            Vào hàng chờ
-                          </Button>
-                        )}
-                        {copy.availability_status === "Đặt trước" && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="mt-1"
-                            disabled
-                          >
-                            Đã đặt trước
-                          </Button>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+                        Tổng: {selectedBook.total_copies} bản
+                      </span>
+                      <span className="rounded-full bg-accent px-3 py-1 text-sm text-accent-foreground">
+                        Có sẵn: {selectedBook.available_count}
+                      </span>
+                      <span className="rounded-full bg-destructive/10 px-3 py-1 text-sm text-destructive">
+                        Đang mượn: {selectedBook.borrowed_count}
+                      </span>
+                      <span className="rounded-full bg-chart-1/10 px-3 py-1 text-sm text-chart-1">
+                        Đặt trước: {selectedBook.reserved_count}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+                    <div className="ml-auto">
+                      <ReserveBookButton bookTitleId={selectedBook.book_title_id} bookTitle={selectedBook.title} />
+                    </div>
                 </div>
               </div>
             </div>

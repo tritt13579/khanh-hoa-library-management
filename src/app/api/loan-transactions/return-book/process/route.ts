@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseClient } from "@/lib/client";
+import { supabaseAdmin } from "@/lib/admin";
 
 interface BookStatus {
   book: {
@@ -180,6 +181,66 @@ export async function POST(request: NextRequest) {
             .eq("card_id", cardData.card_id);
           if (updateDepositError) throw updateDepositError;
         }
+    }
+
+    // 5. Trigger next reservation processing for returned book titles (best-effort)
+    try {
+      // First, clean up any expired holds so they don't block allocation
+      try {
+        await supabaseAdmin.rpc("process_expired_holds_and_trigger_next", { p_hold_hours: 24 });
+      } catch (cleanupErr) {
+        // Not fatal; proceed to attempt allocations per-title
+        console.warn("process_expired_holds_and_trigger_next failed:", cleanupErr);
+      }
+      const returnedCopyIds = selectedBookStatuses
+        .filter((s) => !s.isLost)
+        .map((s) => s.book.copy_id);
+
+      if (returnedCopyIds.length > 0) {
+        const { data: copiesData, error: copiesError } = await supabaseAdmin
+          .from("bookcopy")
+          .select("book_title_id")
+          .in("copy_id", returnedCopyIds);
+
+        if (!copiesError && copiesData && copiesData.length > 0) {
+          const bookTitleIds = Array.from(
+            new Set(copiesData.map((c: any) => c.book_title_id)),
+          );
+
+          for (const bookTitleId of bookTitleIds) {
+            // Call RPC multiple times to allocate all pending reservations
+            // until no more can be allocated (function returns allocated: false)
+            let continueAllocating = true;
+            let attempts = 0;
+            const maxAttempts = 10; // safety limit to prevent infinite loop
+
+            while (continueAllocating && attempts < maxAttempts) {
+              attempts++;
+              const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+                "trigger_next_for_book",
+                {
+                  p_book_title_id: bookTitleId,
+                  p_hold_hours: 24,
+                }
+              );
+
+              if (rpcError) {
+                console.error(`Error in trigger_next_for_book (attempt ${attempts}):`, rpcError);
+                break;
+              }
+
+              // Check if allocation succeeded
+              const result = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+              if (!result || result.allocated === false) {
+                continueAllocating = false;
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error triggering next reservation after return:", err);
+      // don't fail return flow if trigger fails
     }
 
     return NextResponse.json({
