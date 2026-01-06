@@ -160,7 +160,7 @@ export const RevenueStats = () => {
       labels: sortedEntries.map(([key]) => key),
       datasets: [
         {
-          label: "Doanh thu",
+          // label removed per request
           data: sortedEntries.map(([, value]) => value),
           borderColor: "rgb(59, 130, 246)",
           backgroundColor: "rgba(59, 130, 246, 0.1)",
@@ -365,7 +365,8 @@ export const RevenueStats = () => {
                 tooltip: {
                   callbacks: {
                     label: (context) => {
-                      return `Doanh thu: ${formatCurrency(context.parsed.y)}`;
+                      const y = context.parsed && typeof context.parsed.y === "number" ? context.parsed.y : 0;
+                      return formatCurrency(y);
                     },
                   },
                 },
@@ -395,8 +396,9 @@ export const RevenueStats = () => {
                     tooltip: {
                       callbacks: {
                         label: (context) => {
-                          const value = context.parsed;
-                          return `${context.label}: ${formatCurrency(value)}`;
+                          const value = typeof context.parsed === "number" ? context.parsed : 0;
+                          const label = context.label || "";
+                          return `${label}: ${formatCurrency(value)}`;
                         },
                       },
                     },
@@ -431,7 +433,9 @@ export const RevenueStats = () => {
                   tooltip: {
                     callbacks: {
                       label: (context) => {
-                        return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                        const y = context.parsed && typeof context.parsed.y === "number" ? context.parsed.y : 0;
+                        const dsLabel = context.dataset.label || "";
+                        return `${dsLabel}: ${formatCurrency(y)}`;
                       },
                     },
                   },
