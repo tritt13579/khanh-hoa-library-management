@@ -61,7 +61,6 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
 
   const isOpen = isAddOpen || isEditOpen;
 
-  // Helper single date picker component (uses existing Calendar + Popover)
   const DatePickerSingle: React.FC<{
     value: string;
     onChange: (val: string) => void;
@@ -73,7 +72,6 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
 
     const handleSelect = (date: Date | undefined) => {
       if (!date) return;
-      // keep ISO date (yyyy-MM-dd)
       const iso = format(date, "yyyy-MM-dd");
       onChange(iso);
       setOpen(false);
@@ -220,7 +218,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
 
           <div>
             <Label>Ngày sinh</Label>
-            <DatePickerSingle value={dob} onChange={setDob} placeholder="Chọn ngày sinh" />
+            <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -249,7 +247,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
             </div>
             <div>
               <Label>Ngày vào làm</Label>
-              <DatePickerSingle value={hireDate} onChange={setHireDate} placeholder="Chọn ngày vào làm" />
+              <Input type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
             </div>
           </div>
 

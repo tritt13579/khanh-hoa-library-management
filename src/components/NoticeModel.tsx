@@ -56,7 +56,7 @@ const getPenaltyValue = async () => {
 
 const updateLoanStatus = async (loan_transaction_id: number) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/confirmloan`,
+    `/api/reader/confirmloan`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -71,7 +71,7 @@ const updateLoanStatus = async (loan_transaction_id: number) => {
 
 const deleteLoanDetail = async (loan_detail_id: number) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/deleteloandetail`,
+    `/api/reader/deleteloandetail`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

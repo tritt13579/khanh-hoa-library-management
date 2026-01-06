@@ -96,17 +96,14 @@ export default function CancelCardModel({
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/cancel`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            readerId: reader.reader_id,
-            paymentMethod,
-          }),
-        },
-      );
+      const res = await fetch(`/api/reader/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          readerId: reader.reader_id,
+          paymentMethod,
+        }),
+      });
 
       const data = await res.json();
 

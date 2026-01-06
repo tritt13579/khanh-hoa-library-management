@@ -24,7 +24,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setLoading(true);
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/staff/permission`,
+        `/api/staff/permission`,
         {
           cache: "no-store",
           credentials: "include",

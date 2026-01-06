@@ -128,7 +128,7 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, isEdit, book, onC
       };
       formData.append("bookData", JSON.stringify(bookData));
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/book/save`, {
+      const res = await fetch(`/api/book/save`, {
         method: "POST",
         body: formData,
       });

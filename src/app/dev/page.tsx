@@ -9,12 +9,9 @@ export default function TestCronPage() {
   const testCronJob = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/cron/update-overdue-loans`,
-        {
-          method: "POST",
-        },
-      );
+      const response = await fetch(`/api/cron/update-overdue-loans`, {
+        method: "POST",
+      });
       const data = await response.json();
       setResult(data);
     } catch (error) {
@@ -26,9 +23,7 @@ export default function TestCronPage() {
   const checkOverdueLoans = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/loans/overdue`,
-      );
+      const response = await fetch(`/api/loans/overdue`);
       const data = await response.json();
       setResult({ type: "check", data });
     } catch (error) {

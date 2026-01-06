@@ -46,7 +46,7 @@ const ReaderDetailModal: React.FC<ReaderDetailModalProps> = ({
     setIsDeleting(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/delete`,
+        `/api/reader/delete`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

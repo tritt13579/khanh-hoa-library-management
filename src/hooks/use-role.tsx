@@ -21,7 +21,7 @@ export function useRole({
     async function fetchRole() {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/role`,
+          `/api/role`,
         );
         const data = await response.json();
 

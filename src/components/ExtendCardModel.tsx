@@ -109,14 +109,11 @@ export default function ExtendCardModal({
     setIsLoading(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/reader/extend`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ readerId, paymentMethod }),
-        },
-      );
+      const res = await fetch(`/api/reader/extend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ readerId, paymentMethod }),
+      });
 
       const data = await res.json();
 

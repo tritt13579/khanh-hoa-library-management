@@ -54,12 +54,9 @@ const BookTitleDetail = ({
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/delete?book_title_id=${book.book_title_id}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const res = await fetch(`/api/book/delete?book_title_id=${book.book_title_id}`, {
+        method: "DELETE",
+      });
 
       const data = await res.json();
 
@@ -86,14 +83,11 @@ const BookTitleDetail = ({
   const handleDeleteCopy = async (copyId: number) => {
     setDeletingCopyId(copyId);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/deletecopy`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ copy_id: copyId }),
-        },
-      );
+      const res = await fetch(`/api/book/deletecopy`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ copy_id: copyId }),
+      });
 
       const result = await res.json();
 

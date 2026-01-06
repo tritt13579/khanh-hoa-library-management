@@ -39,7 +39,7 @@ const StaffDetailModal = ({
     setIsDeleting(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/staff/delete`,
+        `/api/staff/delete`,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },

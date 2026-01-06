@@ -192,7 +192,7 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
       const bookCopyIds = selectedBooks.map((book) => book.copy_id);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/loan-transactions/add`,
+        `/api/loan-transactions/add`,
         {
           method: "POST",
           headers: {

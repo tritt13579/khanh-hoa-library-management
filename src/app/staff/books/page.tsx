@@ -314,8 +314,8 @@ const BooksPage = () => {
           onSuccess={handleSuccess}
           uploadUrl={
             uploadType === "bookTitle"
-              ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/uploadtitle`
-              : `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/uploadcopy`
+              ? "/api/book/uploadtitle"
+              : "/api/book/uploadcopy"
           }
           templateUrl={
             uploadType === "bookTitle"

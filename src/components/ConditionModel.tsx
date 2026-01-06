@@ -71,19 +71,16 @@ const ConditionModal: React.FC<ConditionModalProps> = ({
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/editcopy`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            copy_id: copyId,
-            new_condition_id: selectedCondition,
-          }),
+      const response = await fetch(`/api/book/editcopy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          copy_id: copyId,
+          new_condition_id: selectedCondition,
+        }),
+      });
 
       const result = await response.json();
 
