@@ -101,7 +101,7 @@ const ReadersPage = () => {
 
   const filteredReaders = readers.filter((r) => {
     const card = r.librarycard?.[0];
-    const fullName = `${r.first_name} ${r.last_name}`.toLowerCase();
+    const fullName = `${r.last_name} ${r.first_name}`.toLowerCase();
     const matchName = fullName.includes(searchTerm.toLowerCase());
 
     const status = card?.card_status || "Chưa đăng ký";
