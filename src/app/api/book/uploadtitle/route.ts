@@ -21,8 +21,32 @@ export async function POST(req: NextRequest) {
     let successCount = 0;
     const failedRows: { rowIndex: number; reason: string }[] = [];
 
+    const normalizeHeaderKey = (value: ExcelJS.CellValue) => {
+      if (typeof value === "string") return value.trim();
+      if (typeof value === "number") return String(value).trim();
+      return "";
+    };
+
+    const normalizeCellValue = (value: ExcelJS.CellValue) => {
+      if (value === null || value === undefined) return null;
+      if (value instanceof Date) return value.toISOString().split("T")[0];
+      if (typeof value === "object") {
+        if ("hyperlink" in value && typeof value.hyperlink === "string") {
+          return value.hyperlink;
+        }
+        if ("text" in value && typeof value.text === "string") {
+          return value.text;
+        }
+        if ("richText" in value && Array.isArray(value.richText)) {
+          return value.richText.map((part) => part.text).join("");
+        }
+        if ("result" in value) return value.result ?? null;
+      }
+      return value;
+    };
+
     // Lấy tiêu đề từ dòng 1
-    const headerRow = rows[1] as string[];
+    const headerRow = rows[1] as ExcelJS.CellValue[] | undefined;
     if (!headerRow) {
       return NextResponse.json({ error: "Không có dòng tiêu đề" }, { status: 400 });
     }
@@ -35,8 +59,8 @@ export async function POST(req: NextRequest) {
       // Map header -> value
       const rowData: Record<string, any> = {};
       for (let j = 1; j < headerRow.length; j++) {
-        const key = headerRow[j];
-        const value = (row as ExcelJS.CellValue[])[j];
+        const key = normalizeHeaderKey(headerRow[j] as ExcelJS.CellValue);
+        const value = normalizeCellValue((row as ExcelJS.CellValue[])[j]);
         if (key) rowData[key] = value;
       }
 
@@ -97,10 +121,13 @@ export async function POST(req: NextRequest) {
 
         const book_title_id = insertedBook.book_title_id;
 
-        if (authors) {
-          const authorIds = typeof authors === "string"
-            ? authors.split(",").map((id: string) => id.trim()).filter(Boolean)
-            : [];
+        if (authors !== null && authors !== undefined && authors !== "") {
+          const authorIds =
+            typeof authors === "number"
+              ? [String(authors)]
+              : typeof authors === "string"
+                ? authors.split(",").map((id: string) => id.trim()).filter(Boolean)
+                : [];
 
           if (authorIds.length > 0) {
             const relations = authorIds.map((author_id: string) => ({

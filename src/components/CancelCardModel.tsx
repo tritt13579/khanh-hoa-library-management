@@ -11,17 +11,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { supabaseClient } from "@/lib/client";
 import { useToast } from "@/hooks/use-toast";
 import { numberToVietnameseWords } from "@/lib/numbertpwords";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 
 interface CancelCardModelProps {
   isOpen: boolean;
@@ -38,7 +30,7 @@ export default function CancelCardModel({
   onSuccess,
   fullName,
 }: CancelCardModelProps) {
-  const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const paymentMethod = "Tiền mặt";
   const [isLoading, setIsLoading] = useState(false);
   const [creatorName, setCreatorName] = useState("");
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
@@ -47,6 +39,7 @@ export default function CancelCardModel({
 
   const card = reader?.librarycard?.[0];
   const depositAmount = card?.depositpackage?.package_amount || 0;
+  const displayName = fullName?.trim() || "Chưa có tên";
 
   // Detect theme changes
   useEffect(() => {
@@ -268,7 +261,7 @@ export default function CancelCardModel({
           </div>
 
           <p>
-            <strong>Mã bạn đọc:</strong> {reader.reader_id}
+            <strong>Họ tên:</strong> {displayName}
           </p>
           <p>
             <strong>Ngày:</strong> {new Date().toLocaleDateString("vi-VN")}
@@ -307,10 +300,6 @@ export default function CancelCardModel({
             (Bằng chữ: {numberToVietnameseWords(Math.abs(depositAmount))})
           </p>
 
-          <p>
-            <strong>Phương thức hoàn tiền:</strong> {paymentMethod}
-          </p>
-
           <div className="mt-6 flex justify-between text-xs">
             <div className="w-1/2 text-center">
               <p>Người lập</p>
@@ -333,21 +322,6 @@ export default function CancelCardModel({
           <Button onClick={handleConfirm} disabled={isLoading}>
             {isLoading ? "Đang xử lý..." : "Xác nhận hủy"}
           </Button>
-        </div>
-
-        <div className="mt-3">
-          <Label className="mb-1 block text-sm font-medium">
-            Phương thức hoàn tiền
-          </Label>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn phương thức" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-              <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </DialogContent>
     </Dialog>

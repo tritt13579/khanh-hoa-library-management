@@ -26,6 +26,8 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
   open,
   onOpenChange,
   onLoanCreated,
+  initialCardId = null,
+  initialBooks = null,
 }) => {
   const router = useRouter();
   const { user } = useAuth();
@@ -70,6 +72,13 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
 
     if (open) {
       fetchData();
+      // If initial values are provided, prefill form and selected books
+      if (initialCardId) {
+        form.reset({ card_id: initialCardId.toString(), borrow_type: form.getValues("borrow_type") || "Mượn về" });
+      }
+      if (initialBooks && initialBooks.length > 0) {
+        setSelectedBooks(initialBooks);
+      }
     }
   }, [open]);
 
@@ -253,18 +262,22 @@ const AddLoanDialog: React.FC<AddLoanDialogProps> = ({
           onOpenChange={onOpenChange}
           selectedBooks={selectedBooks}
           onSubmit={form.handleSubmit(onSubmit)}
+          readOnlyCardId={initialCardId}
         >
           <div className="space-y-4">
-            <BookSearch
-              availableBooks={availableBooks}
-              selectedBooks={selectedBooks}
-              onAddBook={handleAddBook}
-            />
+            {!initialBooks && (
+              <BookSearch
+                availableBooks={availableBooks}
+                selectedBooks={selectedBooks}
+                onAddBook={handleAddBook}
+              />
+            )}
 
             <SelectedBooks
               selectedBooks={selectedBooks}
               onRemoveBook={handleRemoveBook}
               borrowType={borrowType}
+              disableRemove={!!initialBooks}
             />
           </div>
         </LoanForm>

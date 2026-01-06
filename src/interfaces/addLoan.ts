@@ -26,6 +26,8 @@ export interface AddLoanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onLoanCreated: () => void;
+  initialCardId?: number | null;
+  initialBooks?: BookCopy[] | null;
 }
 
 export interface BookSearchProps {
@@ -38,6 +40,7 @@ export interface SelectedBooksProps {
   selectedBooks: BookCopy[];
   onRemoveBook: (copyId: number) => void;
   borrowType: string;
+  disableRemove?: boolean;
 }
 
 export interface LoanFormProps {
@@ -48,4 +51,5 @@ export interface LoanFormProps {
   onSubmit: (e: React.FormEvent) => void;
   selectedBooks: BookCopy[];
   children: React.ReactNode;
+  readOnlyCardId?: number | null;
 }

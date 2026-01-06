@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { Label } from "@/components/ui/label";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import jsPDF from "jspdf";
@@ -26,23 +25,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 interface PaymentStepProps {
   totalFine: number;
-  paymentMethod: string;
-  setPaymentMethod: (method: string) => void;
   fullName?: string;
-  booksStatus?: BookReturnStatus[]; // Thay đổi này để nhận đúng cấu trúc dữ liệu
+  booksStatus?: BookReturnStatus[];
 }
 
-// Interface để định nghĩa cấu trúc invoice item
 interface InvoiceItem {
   title: string;
   fine: number;
@@ -51,24 +39,20 @@ interface InvoiceItem {
 
 export const PaymentStep: React.FC<PaymentStepProps> = ({
   totalFine,
-  paymentMethod,
-  setPaymentMethod,
   fullName,
   booksStatus = [],
 }) => {
   const [open, setOpen] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [creatorName, setCreatorName] = useState<string>("");
+  const displayName = fullName?.trim() || "Chưa có tên";
 
-  // Chuyển đổi dữ liệu từ BookReturnStatus sang định dạng cho hóa đơn
   const getInvoiceItems = (): InvoiceItem[] => {
     const items: InvoiceItem[] = [];
 
-    // Lọc chỉ những sách được chọn
     const selectedBooks = booksStatus.filter((status) => status.isSelected);
 
     selectedBooks.forEach((status) => {
-      // Thêm phí trả trễ nếu có
       if (status.lateFee > 0) {
         items.push({
           title: status.book.title,
@@ -77,7 +61,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
         });
       }
 
-      // Thêm phí hư hại/thất lạc nếu có
       if (status.damageFee > 0) {
         const feeType =
           status.availabilityStatus === "Thất lạc"
@@ -90,7 +73,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
         });
       }
 
-      // Nếu không có phí nào, vẫn hiển thị sách với phí 0
       if (status.lateFee === 0 && status.damageFee === 0) {
         items.push({
           title: status.book.title,
@@ -133,12 +115,10 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
   const handleExportPDF = async () => {
     if (!invoiceRef.current) return;
 
-    // Detect current theme
     const isDarkMode =
       document.documentElement.classList.contains("dark") ||
       window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-    // Define color schemes
     const colors = {
       light: {
         background: "#ffffff",
@@ -160,10 +140,8 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
     const theme = isDarkMode ? colors.dark : colors.light;
 
-    // Clone the element to avoid modifying the original
     const clonedElement = invoiceRef.current.cloneNode(true) as HTMLElement;
 
-    // Create a temporary container with inline styles that html2canvas can understand
     const tempContainer = document.createElement("div");
     tempContainer.style.position = "absolute";
     tempContainer.style.left = "-9999px";
@@ -172,12 +150,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     tempContainer.appendChild(clonedElement);
     document.body.appendChild(tempContainer);
 
-    // Apply inline styles to replace CSS custom properties
     const applyInlineStyles = (element: HTMLElement) => {
-      // Get computed styles
       const computedStyle = window.getComputedStyle(element);
 
-      // Apply key styles that might use CSS custom properties
       element.style.backgroundColor =
         computedStyle.backgroundColor === "rgba(0, 0, 0, 0)" ||
         computedStyle.backgroundColor === "transparent"
@@ -186,7 +161,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
       element.style.color = computedStyle.color || theme.foreground;
       element.style.borderColor = computedStyle.borderColor || theme.border;
 
-      // Handle specific classes
       if (
         element.classList.contains("text-gray-500") ||
         element.style.color === "rgb(107, 114, 128)"
@@ -242,7 +216,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
           <CardTitle>Xác nhận thanh toán</CardTitle>
           <CardDescription>
             {totalFine > 0
-              ? "Vui lòng chọn phương thức thanh toán"
+              ? "Thanh toán sẽ được ghi nhận bằng tiền mặt"
               : "Không có khoản phí phát sinh"}
           </CardDescription>
         </CardHeader>
@@ -252,19 +226,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               <div className="text-xl font-bold">
                 Tổng tiền cần thanh toán: {totalFine.toLocaleString("vi-VN")}{" "}
                 VNĐ
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Phương thức thanh toán</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger id="paymentMethod">
-                    <SelectValue placeholder="Chọn phương thức thanh toán" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-                    <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-                    <SelectItem value="Thẻ tín dụng">Thẻ tín dụng</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Nút xem hóa đơn */}
@@ -302,6 +263,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                         HÓA ĐƠN THANH TOÁN PHÍ TRẢ SÁCH
                       </div>
 
+                      <p>
+                        <strong>Họ tên:</strong> {displayName}
+                      </p>
                       <p>
                         <strong>Ngày:</strong>{" "}
                         {new Date().toLocaleDateString("vi-VN")}
@@ -367,11 +331,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                         (Bằng chữ: {numberToVietnameseWords(totalFine)})
                       </p>
 
-                      <p>
-                        <strong>Phương thức thanh toán:</strong>{" "}
-                        {paymentMethod || "Chưa chọn"}
-                      </p>
-
                       <div className="mt-6 flex justify-between text-xs">
                         <div className="w-1/2 text-center">
                           <p>Người lập</p>
@@ -390,10 +349,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                       <Button variant="outline" onClick={() => setOpen(false)}>
                         Đóng
                       </Button>
-                      <Button
-                        onClick={handleExportPDF}
-                        disabled={!paymentMethod}
-                      >
+                      <Button onClick={handleExportPDF}>
                         In hóa đơn
                       </Button>
                     </div>

@@ -20,6 +20,9 @@ interface FileUploadModalProps {
   uploadUrl: string;
   title?: string;
   description?: string;
+  templateUrl?: string;
+  templateFileName?: string;
+  templateLabel?: string;
 }
 
 const FileUploadModal: React.FC<FileUploadModalProps> = ({
@@ -29,9 +32,23 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
   uploadUrl,
   title = "Tải lên file Excel",
   description = "Chọn một file Excel (.xlsx hoặc .xls) để tải dữ liệu lên hệ thống.",
+  templateUrl,
+  templateFileName,
+  templateLabel = "Tải file mẫu",
 }) => {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
+
+  const handleDownloadTemplate = () => {
+    if (!templateUrl) return;
+
+    const link = document.createElement("a");
+    link.href = templateUrl;
+    if (templateFileName) {
+      link.download = templateFileName;
+    }
+    link.click();
+  };
 
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
@@ -96,6 +113,15 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({
         </div>
 
         <DialogFooter className="pt-4 space-x-2">
+          {templateUrl && (
+            <Button
+              variant="outline"
+              onClick={handleDownloadTemplate}
+              disabled={isUploading}
+            >
+              {templateLabel}
+            </Button>
+          )}
           <Button variant="secondary" onClick={onClose} disabled={isUploading}>
             Hủy
           </Button>

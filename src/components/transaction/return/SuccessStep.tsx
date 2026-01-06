@@ -8,13 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface SuccessStepProps {
   totalFine: number;
   receiptNo: string;
-  paymentMethod: string;
 }
 
 export const SuccessStep: React.FC<SuccessStepProps> = ({
   totalFine,
   receiptNo,
-  paymentMethod,
 }) => {
   return (
     <div className="space-y-6">
@@ -38,10 +36,6 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Số hoá đơn:</span>
                   <span>{receiptNo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phương thức:</span>
-                  <span>{paymentMethod}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Số tiền:</span>

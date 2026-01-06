@@ -21,6 +21,61 @@ const normalizeString = (str: string): string => {
     .replace(/\s+/g, " ");
 };
 
+const compareDates = (a?: string | null, b?: string | null) => {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return new Date(a).getTime() - new Date(b).getTime();
+};
+
+const getLatestReturnDate = (loan: FormattedLoanTransaction) => {
+  const returnDates = loan.books
+    .map((book) => book.returnDate)
+    .filter((date): date is string => !!date);
+  if (returnDates.length === 0) return null;
+  return returnDates.reduce((latest, current) =>
+    compareDates(latest, current) < 0 ? current : latest
+  );
+};
+
+// Sort for urgency: overdue first, then active, then completed with recent activity.
+const sortLoanTransactions = (list: FormattedLoanTransaction[]) => {
+  const statusPriority: Record<string, number> = {
+    "Quá hạn": 1,
+    "Đang mượn": 2,
+    "Đã trả": 3,
+  };
+
+  return [...list].sort((a, b) => {
+    const pa = statusPriority[a.status] ?? 99;
+    const pb = statusPriority[b.status] ?? 99;
+
+    if (pa !== pb) return pa - pb;
+
+    if (pa === 1 || pa === 2) {
+      const due = compareDates(a.dueDate, b.dueDate);
+      if (due !== 0) return due;
+      const tx = compareDates(a.transactionDate, b.transactionDate);
+      if (tx !== 0) return tx;
+    }
+
+    if (pa === 3) {
+      const returnA = getLatestReturnDate(a);
+      const returnB = getLatestReturnDate(b);
+      const returned = compareDates(returnB, returnA);
+      if (returned !== 0) return returned;
+      const tx = compareDates(b.transactionDate, a.transactionDate);
+      if (tx !== 0) return tx;
+    }
+
+    const nameA = normalizeString(a.reader.name);
+    const nameB = normalizeString(b.reader.name);
+    if (nameA !== nameB) return nameA.localeCompare(nameB);
+
+    return a.id - b.id;
+  });
+};
+
 const LoanManagementTab: React.FC<LoanManagementTabProps> = ({
   loanTransactions,
   onLoanCreated,
@@ -82,11 +137,15 @@ const LoanManagementTab: React.FC<LoanManagementTabProps> = ({
     });
   }, [loanTransactions, normalizedSearchTerm, filterStatus, filterBorrowType]);
 
+  const sortedLoans = useMemo(() => {
+    return sortLoanTransactions(filteredLoans);
+  }, [filteredLoans]);
+
   const currentItems = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredLoans.slice(indexOfFirstItem, indexOfLastItem);
-  }, [filteredLoans, currentPage, itemsPerPage]);
+    return sortedLoans.slice(indexOfFirstItem, indexOfLastItem);
+  }, [sortedLoans, currentPage, itemsPerPage]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(filteredLoans.length / itemsPerPage);

@@ -49,7 +49,7 @@ const ReaderHomePage = () => {
   return (
     <>
       {/* ===== BANNER ===== */}
-      <section className="pt-20">
+      <section className="">
         <img
           src="/images/banner/bannerClient.png"
           alt="Banner Thư viện Khánh Hòa"

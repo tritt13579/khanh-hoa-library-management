@@ -69,10 +69,13 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, isEdit, book, onC
 
   useEffect(() => {
     if (isEdit && book) {
-      const authors = book.iswrittenby?.map((rel: any) => ({
-        id: rel.author.author_id,
-        name: rel.author.author_name,
-      })) || [];
+      const authors =
+        book.iswrittenby
+          ?.map((rel: any) => ({
+            id: rel.author?.author_id ? String(rel.author.author_id) : "",
+            name: rel.author?.author_name || "",
+          }))
+          .filter((author: { id: string }) => author.id) || [];
       setFormValues({
         title: book.title || "",
         authors,
@@ -151,11 +154,12 @@ const BookFormModal: React.FC<BookFormModalProps> = ({ isOpen, isEdit, book, onC
   );
 
   const addAuthor = (author: { author_id: string; author_name: string }) => {
-    const exists = formValues.authors.some(a => a.id === author.author_id);
+    const authorId = String(author.author_id);
+    const exists = formValues.authors.some((a) => a.id === authorId);
     if (!exists) {
       setFormValues(prev => ({
         ...prev,
-        authors: [...prev.authors, { id: author.author_id, name: author.author_name }],
+        authors: [...prev.authors, { id: authorId, name: author.author_name }],
       }));
     }
     setAuthorSearch("");

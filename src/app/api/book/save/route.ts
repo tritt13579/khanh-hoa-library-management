@@ -97,20 +97,20 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const { error: deleteAuthorsError } = await supabaseAdmin
+        .from("iswrittenby")
+        .delete()
+        .eq("book_title_id", book_title_id);
+
+      if (deleteAuthorsError) {
+        console.error("Error removing existing authors:", deleteAuthorsError);
+        return NextResponse.json(
+          { error: "Không thể cập nhật tác giả" },
+          { status: 500 },
+        );
+      }
+
       if (authors && authors.length > 0) {
-        const { error: deleteAuthorsError } = await supabaseAdmin
-          .from("iswrittenby")
-          .delete()
-          .eq("book_title_id", book_title_id);
-
-        if (deleteAuthorsError) {
-          console.error("Error removing existing authors:", deleteAuthorsError);
-          return NextResponse.json(
-            { error: "Không thể cập nhật tác giả" },
-            { status: 500 },
-          );
-        }
-
         const authorRelations = authors.map((author: { id: string }) => ({
           book_title_id: book_title_id,
           author_id: author.id,

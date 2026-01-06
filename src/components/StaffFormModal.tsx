@@ -11,7 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 import {
   Select,
   SelectContent,
@@ -56,6 +60,45 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   const isOpen = isAddOpen || isEditOpen;
+
+  // Helper single date picker component (uses existing Calendar + Popover)
+  const DatePickerSingle: React.FC<{
+    value: string;
+    onChange: (val: string) => void;
+    placeholder?: string;
+  }> = ({ value, onChange, placeholder }) => {
+    const [open, setOpen] = useState(false);
+
+    const selectedDate = value ? new Date(value) : undefined;
+
+    const handleSelect = (date: Date | undefined) => {
+      if (!date) return;
+      // keep ISO date (yyyy-MM-dd)
+      const iso = format(date, "yyyy-MM-dd");
+      onChange(iso);
+      setOpen(false);
+    };
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-full justify-start text-left">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : (placeholder || "Chọn ngày")}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleSelect}
+            locale={vi}
+            disabled={(date) => date > new Date()}
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  };
 
   useEffect(() => {
     if (staffData && isEditOpen) {
@@ -177,7 +220,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
 
           <div>
             <Label>Ngày sinh</Label>
-            <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+            <DatePickerSingle value={dob} onChange={setDob} placeholder="Chọn ngày sinh" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -206,7 +249,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
             </div>
             <div>
               <Label>Ngày vào làm</Label>
-              <Input type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+              <DatePickerSingle value={hireDate} onChange={setHireDate} placeholder="Chọn ngày vào làm" />
             </div>
           </div>
 
@@ -228,7 +271,7 @@ const StaffFormModal: React.FC<StaffFormModalProps> = ({
 
           <div>
             <Label>Địa chỉ</Label>
-            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
+            <Input value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
         </div>
 

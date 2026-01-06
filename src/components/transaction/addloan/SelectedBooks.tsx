@@ -10,6 +10,7 @@ const SelectedBooks: React.FC<SelectedBooksProps> = ({
   selectedBooks,
   onRemoveBook,
   borrowType,
+  disableRemove,
 }) => {
   return (
     <div>
@@ -39,13 +40,15 @@ const SelectedBooks: React.FC<SelectedBooksProps> = ({
                   )}
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => onRemoveBook(book.copy_id)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {!disableRemove && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onRemoveBook(book.copy_id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           ))}
 

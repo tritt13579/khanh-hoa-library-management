@@ -54,8 +54,8 @@ const BooksPage = () => {
       const { data, error } = await supabase.from("booktitle").select(`
           *,
           category:category_id(category_name),
-          iswrittenby!inner (
-            author:author_id ( author_name )
+          iswrittenby (
+            author:author_id ( author_id, author_name )
           ),
           bookcopy(*,
             condition:condition_id(condition_name, description),
@@ -122,9 +122,17 @@ const BooksPage = () => {
   const filterByCopyId = (books: any[]) => {
     const trimmed = bookCodeQuery.trim();
     if (!trimmed) return books;
-    return books.filter((book) =>
-      book.bookcopy?.some((copy: any) => String(copy.copy_id) === trimmed),
-    );
+    return books.filter((book) => {
+      // Search by ISBN (book title level)
+      if (book.isbn && String(book.isbn).toLowerCase().includes(trimmed.toLowerCase())) {
+        return true;
+      }
+      // Search by copy_id (book copy level)
+      if (book.bookcopy && Array.isArray(book.bookcopy)) {
+        return book.bookcopy.some((copy: any) => String(copy.copy_id) === trimmed);
+      }
+      return false;
+    });
   };
 
   const getBooksByCategory = (category: string) => {
@@ -132,11 +140,16 @@ const BooksPage = () => {
       const matchCategory =
         category === "Tất cả" || book.category?.category_name === category;
 
-      const matchSearch =
-        book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.iswrittenby?.[0]?.author?.author_name
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase());
+      const titleMatch = book.title?.toLowerCase().includes(searchQuery.toLowerCase());
+      const authorsMatch = !!(
+        book.iswrittenby &&
+        Array.isArray(book.iswrittenby) &&
+        book.iswrittenby.some((w: any) =>
+          w?.author?.author_name?.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+      );
+
+      const matchSearch = titleMatch || authorsMatch;
 
       return matchCategory && matchSearch;
     });
@@ -209,7 +222,7 @@ const BooksPage = () => {
             className="min-w-[150px] flex-1 py-6"
           />
           <Input
-            placeholder="Mã sách..."
+            placeholder="ISBN / Mã bản sao..."
             value={bookCodeQuery}
             onChange={(e) => setBookCodeQuery(e.target.value)}
             className="min-w-[150px] flex-1 py-6"
@@ -304,6 +317,21 @@ const BooksPage = () => {
               ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/uploadtitle`
               : `${process.env.NEXT_PUBLIC_BASE_URL}/api/book/uploadcopy`
           }
+          templateUrl={
+            uploadType === "bookTitle"
+              ? "/templates/book_title_template.xlsx"
+              : "/templates/book_copy_template.xlsx"
+          }
+          templateFileName={
+            uploadType === "bookTitle"
+              ? "book_title_template.xlsx"
+              : "book_copy_template.xlsx"
+          }
+          templateLabel={
+            uploadType === "bookTitle"
+              ? "Tải mẫu tựa sách"
+              : "Tải mẫu bản sao"
+          }
           title={
             uploadType === "bookTitle"
               ? "Tải lên file tựa sách"
@@ -379,7 +407,12 @@ const BooksPage = () => {
                   <BookCard
                     title={book.title}
                     author={
-                      book.iswrittenby?.[0]?.author?.author_name ?? "Không rõ"
+                      (book.iswrittenby && Array.isArray(book.iswrittenby) && book.iswrittenby.length > 0)
+                        ? book.iswrittenby
+                            .map((w: any) => w?.author?.author_name)
+                            .filter(Boolean)
+                            .join(", ")
+                        : "Không rõ"
                     }
                     image={book.cover_image}
                     category={book.category?.category_name}

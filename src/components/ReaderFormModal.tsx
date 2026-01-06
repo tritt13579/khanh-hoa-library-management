@@ -44,6 +44,9 @@ const ReaderFormModal = ({
   const [cardFee, setCardFee] = useState<number>(0);
   const [paymentMethod, setPaymentMethod] = useState("");
 
+  const paymentMethodValue =
+    isCreateOpen || isEditOpen ? "Tiền mặt" : paymentMethod;
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -203,15 +206,6 @@ const ReaderFormModal = ({
     return;
   }
 
-  if (isCreateOpen && !paymentMethod) {
-    toast({
-      title: "Vui lòng chọn phương thức thanh toán",
-      variant: "destructive",
-    });
-    setIsSaving(false);
-    return;
-  }
-
   // Upload ảnh nếu có
   if (imageFile) {
     const fileName = `avatars/readers/${Date.now()}_${imageFile.name}`;
@@ -244,7 +238,7 @@ const ReaderFormModal = ({
     card_type: formData.card_type === "Mượn" ? "Thẻ mượn" : "Thẻ đọc",
     photo_url: uploadedImageUrl,
     payment_date: (isCreateOpen || isEditOpen) ? new Date().toISOString() : undefined,
-    payment_method: (isCreateOpen || isEditOpen) ? paymentMethod : undefined,
+    payment_method: (isCreateOpen || isEditOpen) ? paymentMethodValue : undefined,
     reference_type: isCreateOpen ? "librarycard" : isEditOpen ? "deposittransaction" : undefined,
     invoice_no: (isCreateOpen || isEditOpen) ? generateRandomCode("INV") : undefined,
     receipt_no: (isCreateOpen || isEditOpen) ? generateRandomCode("RCPT") : undefined,
@@ -454,11 +448,12 @@ const ReaderFormModal = ({
           <PaymentCardModel
             cardFee={cardFee}
             depositFee={depositFee}
-            paymentMethod={paymentMethod}
+            paymentMethod={paymentMethodValue}
             setPaymentMethod={setPaymentMethod}
             oldDepositAmount={oldDepositPackageAmount}
             isEdit={isEditOpen}
             fullName={`${formData.last_name} ${formData.first_name}`}
+            showPaymentMethod={false}
           />
         </div>
         )}

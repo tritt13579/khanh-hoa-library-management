@@ -14,13 +14,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabaseClient } from "@/lib/client";
 import { numberToVietnameseWords } from "@/lib/numbertpwords";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
 interface ExtendCardModalProps {
@@ -39,12 +32,13 @@ export default function ExtendCardModal({
   fullName,
 }: ExtendCardModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const paymentMethod = "Tiền mặt";
   const [extendFee, setExtendFee] = useState(0);
   const [creatorName, setCreatorName] = useState("");
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
   const invoiceRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const displayName = fullName?.trim() || "Chưa có tên";
 
   // Detect theme changes (same as PaymentCardModel)
   useEffect(() => {
@@ -271,7 +265,7 @@ export default function ExtendCardModal({
           </div>
 
           <p>
-            <strong>Mã bạn đọc:</strong> {readerId}
+            <strong>Họ tên:</strong> {displayName}
           </p>
           <p>
             <strong>Ngày:</strong> {new Date().toLocaleDateString("vi-VN")}
@@ -311,11 +305,6 @@ export default function ExtendCardModal({
             (Bằng chữ: {numberToVietnameseWords(Math.abs(extendFee))})
           </p>
 
-          <p>
-            <strong>Phương thức thanh toán:</strong>{" "}
-            {paymentMethod || "Chưa chọn"}
-          </p>
-
           <div className="mt-6 flex justify-between text-xs">
             <div className="w-1/2 text-center">
               <p>Người lập</p>
@@ -334,27 +323,12 @@ export default function ExtendCardModal({
           <Button variant="outline" onClick={onClose}>
             Đóng
           </Button>
-          <Button onClick={handlePrint} disabled={!paymentMethod}>
+          <Button onClick={handlePrint}>
             In hóa đơn
           </Button>
           <Button onClick={handleConfirm} disabled={isLoading}>
             {isLoading ? "Đang xử lý..." : "Gia hạn"}
           </Button>
-        </div>
-
-        <div className="mt-3">
-          <span className="mb-1 block text-sm font-medium">
-            Phương thức thanh toán
-          </span>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn phương thức" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-              <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </DialogContent>
     </Dialog>

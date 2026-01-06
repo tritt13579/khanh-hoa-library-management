@@ -53,10 +53,6 @@ const ReportsPage = () => {
               <BookOpen className="mr-2 h-4 w-4" />
               Tình trạng sách
             </TabsTrigger>
-            <TabsTrigger value="revenue" className="px-6">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Doanh thu
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="borrow-return" className="mt-0">
@@ -69,10 +65,6 @@ const ReportsPage = () => {
 
           <TabsContent value="books" className="mt-0">
             <BookStats />
-          </TabsContent>
-
-          <TabsContent value="revenue" className="mt-0">
-            <RevenueStats />
           </TabsContent>
         </Tabs>
       )}

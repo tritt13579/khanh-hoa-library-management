@@ -66,7 +66,11 @@ const RolePermissionPage = () => {
     useState(false);
   const [newRole, setNewRole] = useState({ role_name: "", description: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
+  const [draftPermissionIds, setDraftPermissionIds] = useState<number[]>([]);
+  const ADMIN_ROLE_ID = 1;
+  const SETTINGS_PERMISSION_ID = 7;
 
   // Fetch data
   const fetchRoles = async () => {
@@ -129,13 +133,26 @@ const RolePermissionPage = () => {
     fetchRolePermissions();
   }, []);
 
-  // Helpers
-  const hasPermission = (roleId: number, permissionId: number) => {
-    return rolePermissions.some(
-      (rp) => rp.role_id === roleId && rp.permission_id === permissionId,
-    );
-  };
+  const isAdminRole = (role: Role | null) =>
+    role?.role_id === ADMIN_ROLE_ID;
 
+  useEffect(() => {
+    if (isEditPermissionsModalOpen && selectedRole) {
+      const rolePermissionIds = rolePermissions
+        .filter((rp) => rp.role_id === selectedRole.role_id)
+        .map((rp) => rp.permission_id);
+      const nextPermissionIds = [...rolePermissionIds];
+      if (
+        isAdminRole(selectedRole) &&
+        !nextPermissionIds.includes(SETTINGS_PERMISSION_ID)
+      ) {
+        nextPermissionIds.push(SETTINGS_PERMISSION_ID);
+      }
+      setDraftPermissionIds(nextPermissionIds);
+    }
+  }, [isEditPermissionsModalOpen, selectedRole, rolePermissions]);
+
+  // Helpers
   const getRolePermissions = (roleId: number) => {
     return permissions.filter((permission) =>
       rolePermissions.some(
@@ -286,43 +303,84 @@ const RolePermissionPage = () => {
     }
   };
 
-  const handleTogglePermission = async (
-    roleId: number,
-    permissionId: number,
-    isChecked: boolean,
-  ) => {
+  const handleSavePermissions = async () => {
+    if (!selectedRole) return;
+
+    const roleId = selectedRole.role_id;
+    const currentPermissionIds = new Set(
+      rolePermissions
+        .filter((rp) => rp.role_id === roleId)
+        .map((rp) => rp.permission_id),
+    );
+    const draftPermissionIdSet = new Set(draftPermissionIds);
+    if (
+      isAdminRole(selectedRole) &&
+      !draftPermissionIdSet.has(SETTINGS_PERMISSION_ID)
+    ) {
+      draftPermissionIdSet.add(SETTINGS_PERMISSION_ID);
+    }
+    const permissionsToAdd = [...draftPermissionIdSet].filter(
+      (id) => !currentPermissionIds.has(id),
+    );
+    const permissionsToRemove = [...currentPermissionIds].filter(
+      (id) => !draftPermissionIdSet.has(id),
+    );
+    const safePermissionsToRemove =
+      isAdminRole(selectedRole)
+        ? permissionsToRemove.filter((id) => id !== SETTINGS_PERMISSION_ID)
+        : permissionsToRemove;
+
+    if (
+      permissionsToAdd.length === 0 &&
+      safePermissionsToRemove.length === 0
+    ) {
+      setIsEditPermissionsModalOpen(false);
+      return;
+    }
+
     try {
+      setIsSavingPermissions(true);
       const supabase = supabaseClient();
 
-      if (isChecked) {
-        // Add permission
-        const { error } = await supabase
-          .from("haspermissions")
-          .insert([{ role_id: roleId, permission_id: permissionId }]);
-
+      if (permissionsToAdd.length > 0) {
+        const { error } = await supabase.from("haspermissions").insert(
+          permissionsToAdd.map((permissionId) => ({
+            role_id: roleId,
+            permission_id: permissionId,
+          })),
+        );
         if (error) throw error;
+      }
 
-        setRolePermissions([
-          ...rolePermissions,
-          { role_id: roleId, permission_id: permissionId },
-        ]);
-      } else {
-        // Remove permission
+      if (safePermissionsToRemove.length > 0) {
         const { error } = await supabase
           .from("haspermissions")
           .delete()
           .eq("role_id", roleId)
-          .eq("permission_id", permissionId);
-
+          .in("permission_id", safePermissionsToRemove);
         if (error) throw error;
-
-        setRolePermissions(
-          rolePermissions.filter(
-            (rp) =>
-              !(rp.role_id === roleId && rp.permission_id === permissionId),
-          ),
-        );
       }
+
+      const permissionsToRemoveSet = new Set(safePermissionsToRemove);
+      const updatedRolePermissions = [
+        ...rolePermissions.filter(
+          (rp) =>
+            rp.role_id !== roleId ||
+            !permissionsToRemoveSet.has(rp.permission_id),
+        ),
+        ...permissionsToAdd.map((permissionId) => ({
+          role_id: roleId,
+          permission_id: permissionId,
+        })),
+      ];
+
+      setRolePermissions(updatedRolePermissions);
+      setIsEditPermissionsModalOpen(false);
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật quyền.",
+      });
+      window.location.reload();
     } catch (error) {
       console.error("Error updating permissions:", error);
       toast({
@@ -330,6 +388,8 @@ const RolePermissionPage = () => {
         description: "Không thể cập nhật quyền.",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingPermissions(false);
     }
   };
 
@@ -685,37 +745,45 @@ const RolePermissionPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {permissions.map((permission) => (
-                        <TableRow
-                          key={permission.permission_id}
-                          className="hover:bg-muted/50"
-                        >
-                          <TableCell>
-                            <Checkbox
-                              className="border-primary text-primary"
-                              checked={hasPermission(
-                                selectedRole?.role_id || 0,
-                                permission.permission_id,
-                              )}
-                              onCheckedChange={(checked) => {
-                                if (selectedRole) {
-                                  handleTogglePermission(
-                                    selectedRole.role_id,
-                                    permission.permission_id,
-                                    !!checked,
-                                  );
-                                }
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium text-foreground">
-                            {permission.permission_name}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {permission.description || "Không có mô tả"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {permissions.map((permission) => {
+                        const isProtectedSetting =
+                          isAdminRole(selectedRole) &&
+                          permission.permission_id === SETTINGS_PERMISSION_ID;
+                        return (
+                          <TableRow
+                            key={permission.permission_id}
+                            className="hover:bg-muted/50"
+                          >
+                            <TableCell>
+                              <Checkbox
+                                className="border-primary text-primary"
+                                checked={draftPermissionIds.includes(
+                                  permission.permission_id,
+                                )}
+                                disabled={isProtectedSetting}
+                                onCheckedChange={(checked) => {
+                                  if (isProtectedSetting) return;
+                                  setDraftPermissionIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (checked) {
+                                      next.add(permission.permission_id);
+                                    } else {
+                                      next.delete(permission.permission_id);
+                                    }
+                                    return Array.from(next);
+                                  });
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium text-foreground">
+                              {permission.permission_name}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {permission.description || "Không có mô tả"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {permissions.length === 0 && (
                         <TableRow>
                           <TableCell
@@ -732,10 +800,18 @@ const RolePermissionPage = () => {
               </div>
               <DialogFooter>
                 <Button
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  variant="outline"
+                  className="border-border bg-background text-foreground hover:bg-secondary hover:text-secondary-foreground"
                   onClick={() => setIsEditPermissionsModalOpen(false)}
                 >
-                  Đóng
+                  Hủy
+                </Button>
+                <Button
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={handleSavePermissions}
+                  disabled={isSavingPermissions}
+                >
+                  {isSavingPermissions ? "Đang xử lý..." : "Lưu"}
                 </Button>
               </DialogFooter>
             </DialogContent>

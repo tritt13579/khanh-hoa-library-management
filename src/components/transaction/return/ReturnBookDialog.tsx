@@ -38,9 +38,9 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
   const [booksStatus, setBooksStatus] = useState<BookReturnStatus[]>([]);
   const [allSelected, setAllSelected] = useState(true);
   const [totalFine, setTotalFine] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<string>("Tiền mặt");
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptNo, setReceiptNo] = useState("");
+  const paymentMethod = "Tiền mặt";
 
   useEffect(() => {
     if (dialogOpen && selectedLoan) {
@@ -425,8 +425,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
             {step === 3 && (
               <PaymentStep
                 totalFine={totalFine}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
                 fullName={selectedLoan.reader.name}
                 booksStatus={booksStatus}
               />
@@ -435,7 +433,6 @@ export const ReturnBookDialog: React.FC<ReturnBookDialogProps> = ({
               <SuccessStep
                 totalFine={totalFine}
                 receiptNo={receiptNo}
-                paymentMethod={paymentMethod}
               />
             )}
 

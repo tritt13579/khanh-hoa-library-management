@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   // Lấy thông tin thẻ thư viện hiện tại
   const { data: cardData, error: cardFetchError } = await supabaseAdmin
     .from("librarycard")
-    .select("expiry_date")
+    .select("expiry_date, card_status")
     .eq("reader_id", readerId)
     .in("card_status", ["Hoạt động", "Chưa gia hạn"])
     .single();
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   const currentExpiryDate = new Date(cardData.expiry_date);
+  const currentCardStatus = (cardData.card_status || "").toString();
 
   // Lấy thời hạn thẻ
   const { data: durationSetting, error: durationError } = await supabaseAdmin
@@ -37,7 +38,10 @@ export async function POST(req: NextRequest) {
   }
 
   const extendMonths = parseInt(durationSetting.setting_value);
-  const newExpiryDate = new Date(currentExpiryDate);
+  const now = new Date();
+
+  const baseDate = currentCardStatus === "Chưa gia hạn" ? now : currentExpiryDate;
+  const newExpiryDate = new Date(baseDate);
   newExpiryDate.setMonth(newExpiryDate.getMonth() + extendMonths);
 
   // Lấy số tháng để xác định "Đã hủy"
@@ -55,7 +59,6 @@ export async function POST(req: NextRequest) {
   const cancelMonths = parseInt(cancelSetting.setting_value);
 
   // Xác định trạng thái mới
-  const now = new Date();
   let newStatus = "Chưa gia hạn";
 
   if (newExpiryDate > now) {

@@ -30,6 +30,7 @@ interface PaymentCardModelProps {
   oldDepositAmount?: number;
   isEdit?: boolean;
   fullName?: string;
+  showPaymentMethod?: boolean;
 }
 
 export default function PaymentCardModel({
@@ -40,11 +41,13 @@ export default function PaymentCardModel({
   oldDepositAmount = 0,
   isEdit = false,
   fullName,
+  showPaymentMethod = true,
 }: PaymentCardModelProps) {
   const [open, setOpen] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [creatorName, setCreatorName] = useState<string>("");
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("light");
+  const displayName = fullName?.trim() || "Chưa có tên";
 
   const diffDeposit = depositFee - oldDepositAmount;
   const total = isEdit ? diffDeposit : cardFee + depositFee;
@@ -209,7 +212,7 @@ export default function PaymentCardModel({
       open={open}
       onOpenChange={(isOpen) => {
         setOpen(isOpen);
-        if (!isOpen) {
+        if (!isOpen && showPaymentMethod) {
           setPaymentMethod("");
         }
       }}
@@ -241,6 +244,9 @@ export default function PaymentCardModel({
             HÓA ĐƠN THANH TOÁN
           </div>
 
+          <p>
+            <strong>Họ tên:</strong> {displayName}
+          </p>
           <p>
             <strong>Ngày:</strong> {new Date().toLocaleDateString("vi-VN")}
           </p>
@@ -315,10 +321,12 @@ export default function PaymentCardModel({
             (Bằng chữ: {numberToVietnameseWords(Math.abs(total))})
           </p>
 
-          <p>
-            <strong>Phương thức thanh toán:</strong>{" "}
-            {paymentMethod || "Chưa chọn"}
-          </p>
+          {showPaymentMethod && (
+            <p>
+              <strong>Phương thức thanh toán:</strong>{" "}
+              {paymentMethod || "Chưa chọn"}
+            </p>
+          )}
 
           <div className="mt-6 flex justify-between text-xs">
             <div className="w-1/2 text-center">
@@ -338,25 +346,30 @@ export default function PaymentCardModel({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Đóng
           </Button>
-          <Button onClick={handleExportPDF} disabled={!paymentMethod}>
+          <Button
+            onClick={handleExportPDF}
+            disabled={showPaymentMethod && !paymentMethod}
+          >
             In hóa đơn
           </Button>
         </div>
 
-        <div className="mt-3">
-          <span className="mb-1 block text-sm font-medium">
-            Phương thức thanh toán
-          </span>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn phương thức" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
-              <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {showPaymentMethod && (
+          <div className="mt-3">
+            <span className="mb-1 block text-sm font-medium">
+              Phương thức thanh toán
+            </span>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn phương thức" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Chuyển khoản">Chuyển khoản</SelectItem>
+                <SelectItem value="Tiền mặt">Tiền mặt</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -133,21 +133,31 @@ const StaffHomePage = () => {
 
       if (reservationError) throw reservationError;
 
-      // Count total in queue for each book
+      // Count total in queue for each book by taking the max `position` from reservationqueue
       const queueCountMap = new Map<number, number>();
+      const reservationBookMap = new Map<number, number>();
       reservationData?.forEach((reservation: any) => {
         const bookId = Array.isArray(reservation.booktitle)
           ? reservation.booktitle[0]?.book_title_id
           : reservation.booktitle?.book_title_id;
-
-        if (
-          bookId &&
-          (reservation.reservation_status === "Chờ xử lý" ||
-            reservation.reservation_status === "Sẵn sàng")
-        ) {
-          queueCountMap.set(bookId, (queueCountMap.get(bookId) || 0) + 1);
-        }
+        if (bookId) reservationBookMap.set(reservation.reservation_id, bookId);
       });
+
+      const reservationIds = Array.from(reservationBookMap.keys());
+      if (reservationIds.length > 0) {
+        const { data: rqData, error: rqError } = await supabase
+          .from("reservationqueue")
+          .select("reservation_id, position")
+          .in("reservation_id", reservationIds);
+        if (rqError) throw rqError;
+
+        rqData?.forEach((rq: any) => {
+          const bookId = reservationBookMap.get(rq.reservation_id);
+          if (!bookId) return;
+          const currentMax = queueCountMap.get(bookId) ?? 0;
+          queueCountMap.set(bookId, Math.max(currentMax, rq.position));
+        });
+      }
 
       const formattedLoanTransactions =
         loanData?.map((loan: any) => {

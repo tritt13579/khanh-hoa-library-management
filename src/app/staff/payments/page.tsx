@@ -416,7 +416,7 @@ const PaymentPage = () => {
                 <TableHead>Ngày thanh toán</TableHead>
                 <TableHead>Số tiền</TableHead>
                 <TableHead>Loại giao dịch</TableHead>
-                <TableHead>Phương thức</TableHead>
+                
                 <TableHead>Số hóa đơn</TableHead>
                 <TableHead>Số biên lai</TableHead>
               </TableRow>
@@ -444,9 +444,7 @@ const PaymentPage = () => {
                       {getReferenceTypeLabel(payment.reference_type)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {getPaymentMethodLabel(payment.payment_method)}
-                  </TableCell>
+                  
                   <TableCell>{payment.invoice_no || "—"}</TableCell>
                   <TableCell>{payment.receipt_no || "—"}</TableCell>
                 </TableRow>

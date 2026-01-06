@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     amount,
   } = body;
 
-  if (!email || !first_name || !last_name || !date_of_birth || !gender || !card_type || !amount) {
+  if (!email || !first_name || !last_name || !date_of_birth || !gender || !card_type || amount === undefined || amount === null) {
     return NextResponse.json({ error: "Thiếu thông tin bắt buộc" }, { status: 400 });
   }
 
@@ -61,8 +61,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cập nhật thẻ thư viện thất bại" }, { status: 500 });
     }
 
-    // 3. Tạo payment mới (có thể âm)
-    if (!payment_date || !payment_method) {
+    // 3. Tạo payment mới 
+    // Only require payment fields when there's a non-zero amount to process.
+    if (amount !== 0 && (!payment_date || !payment_method)) {
       return NextResponse.json({ error: "Thiếu thông tin payment khi cập nhật" }, { status: 400 });
     }
 
@@ -134,8 +135,9 @@ export async function POST(req: NextRequest) {
   const expiryDate = new Date(issueDate);
   expiryDate.setMonth(issueDate.getMonth() + expiryMonths);
 
-  // 4. Tạo payment 
-  if (!payment_date || !payment_method) {
+  // 4. Tạo payment
+  // Only require payment info when amount is non-zero.
+  if (amount !== 0 && (!payment_date || !payment_method)) {
     return NextResponse.json({ error: "Thiếu thông tin payment" }, { status: 400 });
   }
 
