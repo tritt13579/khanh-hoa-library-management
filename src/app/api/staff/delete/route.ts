@@ -1,3 +1,4 @@
+import { createClient } from "@/auth/server";
 import { supabaseAdmin } from "@/lib/admin";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -25,6 +26,26 @@ export async function DELETE(req: NextRequest) {
     }
 
     const authUserId = staffData?.auth_user_id;
+
+    const { auth } = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Không thể xác thực người dùng" },
+        { status: 401 },
+      );
+    }
+
+    if (authUserId && user.id === authUserId) {
+      return NextResponse.json(
+        { error: "Không thể tự xóa tài khoản của mình" },
+        { status: 400 },
+      );
+    }
 
     const { error: deleteError } = await supabaseAdmin
       .from("staff")
