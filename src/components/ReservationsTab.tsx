@@ -588,8 +588,8 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                   <TableHead>Độc giả</TableHead>
                   <TableHead>Sách</TableHead>
                   <TableHead>Ngày đặt</TableHead>
-                  <TableHead className="min-w-[160px]">Trạng thái</TableHead>
-                  <TableHead className="min-w-[140px]">Vị trí</TableHead>
+                  <TableHead className="min-w-[120px]">Trạng thái</TableHead>
+                  <TableHead className="min-w-[80px]">Vị trí</TableHead>
                   <TableHead>Hạn giữ</TableHead>
                   <TableHead>Thao tác</TableHead>
                 </TableRow>
@@ -633,10 +633,10 @@ const ReservationsTab: React.FC<ReservationsTabProps> = ({
                       <TableCell>
                         {formatDate(reservation.reservationDate)}
                       </TableCell>
-                      <TableCell className="min-w-[160px]">
+                      <TableCell className="min-w-[120px]">
                         {getStatusBadge(reservation.status)}
                       </TableCell>
-                      <TableCell className="min-w-[140px]">
+                      <TableCell className="min-w-[80px]">
                         {reservation.queuePosition ? (
                           <Badge variant="secondary">
                             #{reservation.queuePosition} / {reservation.totalInQueue}
