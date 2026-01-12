@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-export const dynamic = "force-dynamic";
 import { supabaseClient } from "@/lib/client";
 
 export async function GET(request: Request) {

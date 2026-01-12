@@ -1,6 +1,5 @@
 // app/api/role/route.ts
 import { NextRequest, NextResponse } from "next/server";
-export const dynamic = "force-dynamic";
 import { supabaseAdmin } from "@/lib/admin";
 import { createClient } from "@/auth/server";
 
